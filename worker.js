@@ -29,6 +29,9 @@ async function chat(request,env){
   if(!result.ok)return json({error:'Your Vault session expired. Sign in again.'},401);
   identity=await result.json();
   if(!identity?.id)return json({error:'Invalid Vault session.'},401);
+  if(!env.VAULT_AI_ALLOWED_EMAIL)return json({error:'Chat access is not configured. Set VAULT_AI_ALLOWED_EMAIL in Cloudflare Worker secrets.'},503);
+  if(String(identity.email||'').trim().toLowerCase()!==String(env.VAULT_AI_ALLOWED_EMAIL).trim().toLowerCase())
+    return json({error:'This Vault account is not authorized to use the AI assistant.'},403);
  }catch{return json({error:'Unable to verify Vault sign-in right now.'},502);}
  const length=Number(request.headers.get('content-length')||0);
  if(length>85000)return json({error:'Build snapshot is too large.'},413);
