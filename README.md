@@ -1,6 +1,6 @@
 # NBA 2K27 Build Vault — Online + Cloud Sync
 
-This is your existing mobile/desktop Build Vault converted into a static website with private per-account cloud saving. It includes the same 11 original builds, editable stats and rankings, comparisons, and **Based on Legends** with Hakeem.
+This is your existing mobile/desktop Build Vault converted into a static website with private per-account cloud saving. It includes the 15-build collection, editable stats and rankings, comparisons, and **Based on Legends** with Hakeem.
 
 ## What you need
 
@@ -84,18 +84,7 @@ The 11 baseline builds are included already; you only need import if your old fi
 - `config.js` — **your** Supabase project public settings (fill before deployment)
 - `supabase.sql` — authenticated user table, RLS policies, and atomic save function
 - `README.md` — these instructions
-## Build Vault AI troubleshooting (15-build website)
 
-The floating **Build Vault AI** chat sends authenticated requests to `POST /api/chat`. The source supports two deployment types:
+## Current website
 
-- **Cloudflare Workers with static assets**: `worker.js` and `wrangler.toml` serve the site and the API.
-- **Cloudflare Pages (Git-connected)**: `functions/api/chat.js` creates the same API route and reuses `worker.js`. Make sure the Pages deployment includes the `functions` folder; a static-only upload will not execute the chat backend.
-
-In your **actual deployed** Cloudflare Worker or Pages project, add these two **Secrets** in **Settings → Variables and Secrets** (do not add the values to GitHub, `config.js`, or browser code):
-
-1. `OPENAI_API_KEY`: a valid OpenAI API key with API billing/quota enabled (ChatGPT subscription access does not provide API credits).
-2. `VAULT_AI_ALLOWED_EMAIL`: the exact email address used to sign into your Vault through Supabase Cloud Sync.
-
-Deploy after adding secrets. Open your site's own URL and visit `/api/chat` in the browser: a **JSON** `Method not allowed` response (HTTP 405) indicates the API route is deployed. A Cloudflare/static HTML 404 indicates it is not deployed. Then sign in through **☁ Cloud Sync** and try a question in Build Vault AI. If the chat reports that the AI is not configured, verify the secrets on the deployed project (Production as well as Preview if used); if it reports unauthorized, verify the allowed email; if it reports API quota, check your OpenAI API platform billing.
-
-Do not paste API keys into the chat or into GitHub. These steps configure runtime credentials, which cannot be recovered from repository source code.
+This repository contains the 15-build NBA 2K27 Build Vault with build analysis, player cards, rankings, cap breakers, comparisons and Supabase-based cloud sync. The optional AI chat assistant and its backend were removed; no OpenAI API key or AI-specific Cloudflare secrets are required.
