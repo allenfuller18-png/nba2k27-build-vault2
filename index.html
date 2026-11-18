@@ -510,7 +510,8 @@ function playerPortrait(b){
  if(!b.goat&&!b.legend)return '';
  const person=b.legend?String(b.legendName||''):String(b.name||'').split('—')[0].trim();
  const normalize=t=>String(t).toLowerCase().normalize('NFKD').replace(/[^a-z0-9 ]/g,'').replace(/ +/g,' ').trim();
- const id=PLAYER_HEADSHOTS[normalize(person)];
+ const match=typeof NBA_COMPARISONS!=='undefined'?Object.values(NBA_COMPARISONS).flat().find(row=>normalize(row[0])===normalize(person)):null;
+ const id=PLAYER_HEADSHOTS[normalize(person)]||(match&&match[4]);
  return id?'https://cdn.nba.com/headshots/nba/latest/1040x760/'+id+'.png':'';
 }
 function profileHero(b){
