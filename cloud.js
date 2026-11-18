@@ -28,7 +28,7 @@
     if (!Array.isArray(newBuilds) || !newBuilds.every(b => b && typeof b.name === 'string' && b.stats && typeof b.stats === 'object')) {
       throw new Error('The cloud record is not a valid build list.');
     }
-    builds = JSON.parse(JSON.stringify(newBuilds));
+    builds = migrateCapBreakers(JSON.parse(JSON.stringify(newBuilds)));
     try { localStorage.setItem(KEY, JSON.stringify(builds)); } catch (_) {}
     currentId = null;
     if (typeof tab !== 'undefined') tab = 'all';
@@ -48,6 +48,9 @@
       const cloud = await getRemote();
       if (cloud) {
         revision = Number(cloud.revision);
+        const capMigrated = migrateCapBreakers(cloud.builds);
+        const needsCapMigration = JSON.stringify(capMigrated) !== JSON.stringify(cloud.builds);
+        cloud.builds = capMigrated;
         // Roll out new built-in 2K GOAT presets to an existing cloud vault
         // without erasing any edits or newly added builds already stored there.
         const newPreset = INITIAL.find(b => b.id === GOAT_MAGIC_ID);
@@ -72,6 +75,7 @@
           replaceBuilds(cloud.builds);
         }
         dirty = false; conflict = false; status = 'saved';
+        if (needsCapMigration) { dirty = true; loading = false; await push(); }
       } else {
         revision = 0; dirty = true; conflict = false;
         await push(); // Seed the cloud with the current 11 builds or local edits.
@@ -114,8 +118,11 @@
       const cloud = await getRemote();
       if (cloud && Number(cloud.revision) > revision) {
         revision = Number(cloud.revision);
-        replaceBuilds(cloud.builds);
+        const migrated = migrateCapBreakers(cloud.builds);
+        const changed = JSON.stringify(migrated) !== JSON.stringify(cloud.builds);
+        replaceBuilds(migrated);
         status = 'saved'; notifyCloud('Updated with your latest cloud changes ✓');
+        if (changed) { dirty = true; await push(); }
       }
     } catch (e) { console.warn('Cloud refresh failed', e); }
   }
