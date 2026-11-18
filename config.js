@@ -1,7 +1,5 @@
-// Supabase Dashboard → Project Settings → API / Connect.
-// These are PUBLIC client values, safe for a browser website.
-// NEVER put a service_role or secret key in this file.
+// Public Supabase browser configuration. Do not add secret/service_role keys here.
 window.VAULT_CONFIG = {
-  supabaseUrl: '',
-  supabaseAnonKey: ''
+  supabaseUrl: 'https://bsayaztmdsakmhlwztxk.supabase.co',
+  supabaseAnonKey: 'sb_publishable_H2UPJPFDXDPfAzrD3X8F_Q_gP8xRcAy'
 };
