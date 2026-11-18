@@ -48,6 +48,20 @@
       const cloud = await getRemote();
       if (cloud) {
         revision = Number(cloud.revision);
+        // Roll out new built-in 2K GOAT presets to an existing cloud vault
+        // without erasing any edits or newly added builds already stored there.
+        const newPreset = INITIAL.find(b => b.id === GOAT_MAGIC_ID);
+        if (newPreset && !cloud.builds.some(b => b.id === GOAT_MAGIC_ID)) {
+          const localWithoutPreset = builds.filter(b => b.id !== GOAT_MAGIC_ID);
+          if (JSON.stringify(localWithoutPreset) !== JSON.stringify(cloud.builds) && !isDefault()) {
+            const useCloud = confirm('Cloud has your older builds, plus this update adds Magic Johnson. Press OK to preserve your cloud builds and add Magic. Press Cancel to review this device\u2019s edits before merging. Export a backup if needed.');
+            if (!useCloud) { conflict = true; status = 'conflict'; return; }
+          }
+          replaceBuilds([...cloud.builds, JSON.parse(JSON.stringify(newPreset))]);
+          dirty = true; conflict = false;
+          await push();
+          return;
+        }
         if (JSON.stringify(cloud.builds) !== JSON.stringify(builds)) {
           if (!isDefault()) {
             // Don't silently replace a user's edits on this device.
