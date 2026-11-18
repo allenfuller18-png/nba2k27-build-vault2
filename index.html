@@ -97,6 +97,7 @@ const GROUPS={Finishing:['Close Shot','Driving Layup','Driving Dunk','Standing D
 const ALL_STATS=Object.values(GROUPS).flat();
 function build(id,name,pos,height,weight,wingspan,rec,def,speed,legend,stats,extra={}){return {id,name,pos,height,weight,wingspan,rec,def,speed,legend:!!legend,legendName:legend?'Hakeem Olajuwon':'',stats:Object.fromEntries(ALL_STATS.map((s,i)=>[s,stats[i]??25])),...extra};}
 const INITIAL=[
+ build('b14','2-Way Bully Laymaker','SF',"6'4\"",224,"6'7\"",8.8,8.7,95,false,[90,99,77,35,40,60,82,69,77,83,88,60,91,61,45,35,51,95,91,90,90],{animations:false,capBreakers:{'Driving Layup':{base:94,used:5,planned:0},'Three-Point':{base:61,used:21,planned:0},'Speed':{base:93,used:2,planned:0}},notes:'96 OVR in save screenshot (Milwaukee Bucks). Original maximum caps and applied break changes from cap-breaker screen. Applied: driving layup 94→99, three-point 61→82, speed 93→95. Cap Breakers Remaining: 0; Build Specialization Cap Breakers Remaining: 0. Other caps are unspent/unbroken potential ratings; cap-breaker screen is not current upgrade level. REC 8.8 and Defense 8.7 are provisional personal-ranking estimates.'}),
  build('b13','Apex-Axing Poster Slasher','PF',"6'9\"",244,"7'3\"",8.7,7.5,80,false,[80,79,99,64,60,75,78,55,53,78,70,75,58,31,82,45,70,80,76,95,90],{animations:false,capBreakers:{'Block':{base:49,used:33,planned:0}},notes:'96 OVR at screenshot. Screenshot shows 2 cap breakers available and unassigned. Block original cap 49, upgraded to 82 (+33 total attribute points). Standing Dunk 64 and Post Control 60 are MAX CAPS (current upgrades shown as 60 and 25). Other numbers represent maximum attribute caps, not necessarily current unlocked upgrades. REC 8.7 and DEF 7.5 are provisional subjective estimates.'}),
  build('b12','Magic Johnson — 2K GOAT Build','PG',"6'9\"",215,"7'1\"",9.5,8.3,87,false,[90,95,58,60,93,87,70,85,99,97,93,80,80,73,65,74,84,87,83,85,70],{goat:true,legend:false,legendName:'',animations:false,notes:'OFFICIAL 2K GOAT BUILD — Magic Johnson, Season 2 Level 26 reward. Preset 99 OVR attributes before additional cap breakers; fixed animations. Not a user-created Based on Legends build. REC 9.5 and Defense 8.3 are subjective estimates.'}),
  build('b01','3-Level Shot Eraser','SF',"6'8\"",185,"6'8\"",9.5,9.0,89,false,[82,71,88,42,51,97,92,80,77,86,80,53,85,77,75,45,60,89,89,50,75],{animations:true,notes:'REC-focused scoring wing. 97 mid-range and 92 three-point; 88 driving dunk. Cap-breaker maximums shown.'}),
@@ -143,7 +144,7 @@ function attrVisual(b,s){
 let stored;try{stored=JSON.parse(localStorage.getItem(KEY))}catch(e){};
 let builds=Array.isArray(stored)&&stored.length?migrateCapBreakers(stored):clone(INITIAL),tab='all',query='',position='all',sort='rec',currentId=null,compareIds=[null,null];
 // Migrate prior browser saves without discarding existing edits.
-for(const presetId of [GOAT_MAGIC_ID,'b13']){
+for(const presetId of [GOAT_MAGIC_ID,'b13','b14']){
  if(!builds.some(b=>b.id===presetId)){
   const preset=INITIAL.find(b=>b.id===presetId);
   if(preset)builds.push(clone(preset));
