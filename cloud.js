@@ -191,6 +191,6 @@
     window.addEventListener('focus', checkUpdates);
     document.addEventListener('visibilitychange', () => {if (!document.hidden) checkUpdates();});
   }
-  window.cloudVault = { statusLabel, openPanel, checkUpdates };
+  window.cloudVault = { statusLabel, openPanel, checkUpdates, getAccessToken: async () => sb ? (await sb.auth.getSession()).data.session?.access_token || null : null };
   refresh();
 })();
