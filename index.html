@@ -143,7 +143,19 @@ function capInfo(b,s){
  return {base,used,planned,target};
 }
 const EXACT_CAP_STEPS={
- b03:{'Mid-Range':{usedSteps:[3,2]},'Speed':{usedSteps:[4]},'Agility':{usedSteps:[8,6]},'Vertical':{usedSteps:[2,2,2,2]}}
+ b01:{"Driving Dunk":{usedSteps:[4,3]},"Mid-Range":{usedSteps:[1,1]},"Block":{usedSteps:[10,8,7,6,4]}},
+ b02:{"Close Shot":{usedSteps:[3]},"Free Throw":{usedSteps:[5,4]},"Pass Accuracy":{usedSteps:[3,3,2,2]},"Defensive Rebound":{usedSteps:[1,1,1]}},
+ b03:{"Mid-Range":{usedSteps:[3,2]},"Speed":{usedSteps:[4]},"Agility":{usedSteps:[8,6]},"Vertical":{usedSteps:[2,2,2,2]}},
+ b04:{"Mid-Range":{usedSteps:[1,1,1,1,1]},"Free Throw":{usedSteps:[7]},"Defensive Rebound":{usedSteps:[3,2,2]}},
+ b05:{"Pass Accuracy":{usedSteps:[1,1]},"Speed With Ball":{usedSteps:[11,10]},"Vertical":{usedSteps:[3,3,3]}},
+ b07:{"Three-Point":{usedSteps:[8,7,6,5]}},
+ b08:{"Close Shot":{usedSteps:[2,2,1,1]}},
+ b09:{"Three-Point":{usedSteps:[1,1,1]},"Speed":{usedSteps:[1,1]},"Agility":{usedSteps:[1]},"Strength":{usedSteps:[10,8,2]}},
+ b10:{"Close Shot":{usedSteps:[1,1]},"Mid-Range":{usedSteps:[1]},"Three-Point":{usedSteps:[2]},"Pass Accuracy":{usedSteps:[2,2,2]},"Speed With Ball":{usedSteps:[4,4]}},
+ b11:{"Mid-Range":{usedSteps:[6,6,5,4,4]},"Three-Point":{usedSteps:[10,9]}},
+ b12:{"Driving Layup":{usedSteps:[1,1,1,1]},"Driving Dunk":{usedSteps:[8]},"Free Throw":{usedSteps:[4,3]}},
+ b14:{"Speed":{usedSteps:[1,1]}},
+ b15:{"Agility":{usedSteps:[8]}},
 };
 function safeSteps(x){
  return Array.isArray(x)&&x.every(v=>Number.isInteger(v)&&v>0&&v<=99)?x.slice():[];
