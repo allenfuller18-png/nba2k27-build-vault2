@@ -51,18 +51,16 @@
         const capMigrated = migrateCapBreakers(cloud.builds);
         const needsCapMigration = JSON.stringify(capMigrated) !== JSON.stringify(cloud.builds);
         cloud.builds = capMigrated;
-        // Roll out new built-in 2K GOAT presets to an existing cloud vault
-        // without erasing any edits or newly added builds already stored there.
-        const newPreset = INITIAL.find(b => b.id === GOAT_MAGIC_ID);
-        if (newPreset && !cloud.builds.some(b => b.id === GOAT_MAGIC_ID)) {
-          const localWithoutPreset = builds.filter(b => b.id !== GOAT_MAGIC_ID);
-          if (JSON.stringify(localWithoutPreset) !== JSON.stringify(cloud.builds) && !isDefault()) {
-            const useCloud = confirm('Cloud has your older builds, plus this update adds Magic Johnson. Press OK to preserve your cloud builds and add Magic. Press Cancel to review this device\u2019s edits before merging. Export a backup if needed.');
-            if (!useCloud) { conflict = true; status = 'conflict'; return; }
-          }
-          replaceBuilds([...cloud.builds, JSON.parse(JSON.stringify(newPreset))]);
+        // Add newly introduced preset builds while keeping the user's cloud edits.
+        const missingPresets = [GOAT_MAGIC_ID, 'b13']
+          .filter(id => !cloud.builds.some(b => b.id === id))
+          .map(id => INITIAL.find(b => b.id === id))
+          .filter(Boolean);
+        if (missingPresets.length) {
+          const updated = [...cloud.builds, ...missingPresets.map(b => JSON.parse(JSON.stringify(b)))];
+          replaceBuilds(updated);
           dirty = true; conflict = false;
-          loading = false; // allow revision-aware migration to save
+          loading = false;
           await push();
           return;
         }
