@@ -378,7 +378,7 @@ const INITIAL=[
  build('b12','Magic Johnson — 2K GOAT Build','PG',"6'9\"",215,"7'1\"",9.5,8.3,87,false,[90,99,66,60,93,87,70,92,99,97,93,80,80,73,65,74,84,87,83,85,70],{goat:true,legend:false,legendName:'',animations:false,notes:'OFFICIAL 2K GOAT BUILD — Magic Johnson, Season 2 Level 26 reward. Screenshot-confirmed applied attribute cap increases: Driving Layup 95→99 (+4), Driving Dunk 58→66 (+8), Free Throw 85→92 (+7). Two cap breakers remain unassigned. All other attributes retain official preset caps. Fixed GOAT animations. Not a user-created Based on Legends build. REC 9.5 and Defense 8.3 are subjective estimates.'}),
  build('b01','3-Level Shot Eraser','SF',"6'8\"",185,"6'8\"",9.5,9.0,89,false,[82,71,88,42,51,97,92,80,77,86,80,53,85,77,75,45,60,89,89,50,75],{animations:true,notes:'REC-focused scoring wing. 97 mid-range and 92 three-point; 88 driving dunk. Cap-breaker maximums shown.'}),
  build('b02','Diming Board Enforcer','C',"6'11\"",257,"7'4\"",9.3,8.0,69,false,[84,65,85,85,79,84,82,89,90,60,40,85,39,45,60,93,94,69,60,91,85],{animations:false,notes:'Stretch passing/rebounding center. Important: block is 60. Most recent recorded max ratings.'}),
- build('b03','Backline Mid-Post Pro','C',"7'0\"",238,"7'3\"",9.2,9.3,70,true,[94,69,62,75,94,87,60,85,70,49,26,88,38,43,93,82,94,70,60,90,83],{animations:true,notes:'Custom Hakeem build. 95 OVR when last recorded; values represent full cap potential. Fully assigned cap breakers: mid-range 82→87; speed 66→70; agility 46→60; vertical 75→83. No regular breakers left.'}),
+ build('b03','Hakeem Olajuwon','C',"7'0\"",238,"7'3\"",9.2,9.3,70,true,[94,69,62,75,94,87,60,85,70,49,26,88,38,43,93,82,94,70,60,90,83],{animations:true,notes:'Custom Hakeem build. 95 OVR when last recorded; values represent full cap potential. Fully assigned cap breakers: mid-range 82→87; speed 66→70; agility 46→60; vertical 75→83. No regular breakers left.'}),
  build('b04','Mid-Paint Edge Enforcer','SF',"6'9\"",196,"7'3\"",9.2,9.2,85,false,[80,90,73,48,35,82,80,70,65,65,70,77,91,77,93,57,77,85,78,70,83],{animations:true,notes:'Mobile defensive wing. 91 perimeter, 93 block, 85 speed. Ratings from latest recorded build snapshot.'}),
  build('b05','2-Way Post Playmaker','C',"7'0\"",246,"7'6\"",9.1,7.6,60,false,[96,96,45,60,96,71,78,78,99,62,58,95,45,50,68,65,90,60,58,90,69],{animations:true,notes:'Inside post creation and elite 99 pass accuracy. Ratings are full potential caps.'}),
  build('b06','2-Way Small Ball Five','C',"6'9\"",224,"7'3\"",9.0,9.5,82,false,[76,65,82,55,50,36,25,36,90,80,70,80,75,90,93,93,95,82,78,84,90],{animations:true,notes:'Defense, rebounding and passing only. No intended shooting, only occasional open dunks. Planned seven breakers: block 92→93 (+1); OREB 91→93 (+2); DREB 92→95 (+3); agility 76→78 (+1).'}),
@@ -440,6 +440,7 @@ function migrateCapBreakers(arr){
    const b=clone(original),seeds=CB_SEEDS[b.id]||{};
    // Rename the exact legacy build only; preserve all of its other fields.
    if(b.id==='b07' && b.name==='Mid-Post Rim Reaper')b.name='Shot-Axing 3-Level Dimer';
+   if(b.id==='b03' && b.name==='Backline Mid-Post Pro')b.name='Hakeem Olajuwon';
    // Apply newly confirmed Magic cap upgrades to older saved copies, but
    // preserve any user-edited values and previously recorded cap data.
    if(b.id==='b12'){
@@ -499,7 +500,7 @@ function heightInches(s){let x=String(s).match(/(\d+)'(\d+)/);return x?Number(x[
 const recSorted=()=>[...builds].sort((a,b)=>b.rec-a.rec||a.id.localeCompare(b.id));
 const defSorted=()=>[...builds].sort((a,b)=>b.def-a.def||a.id.localeCompare(b.id));
 function rankLabels(b){let a=[],r=recSorted().findIndex(x=>x.id===b.id)+1,d=defSorted().findIndex(x=>x.id===b.id)+1;if(r>0&&r<=3)a.push(`REC #${r}`);if(d>0&&d<=3)a.push(`Def #${d}`);return a}
-function displayName(b){let lbl=rankLabels(b);return esc(b.name)+(b.legendName?` <span class="preview-badge">(${esc(b.legendName)})</span>`:'')+(lbl.length?` <span style="color:#bbc5ff;font-size:.73em">${lbl.map(x=>'('+x+')').join(' ')}</span>`:'')}
+function displayName(b){let lbl=rankLabels(b);return esc(b.name)+(b.legendName&&b.legendName.trim().toLowerCase()!==b.name.trim().toLowerCase()?` <span class="preview-badge">(${esc(b.legendName)})</span>`:'')+(lbl.length?` <span style="color:#bbc5ff;font-size:.73em">${lbl.map(x=>'('+x+')').join(' ')}</span>`:'')}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(builds));document.dispatchEvent(new CustomEvent('vault:changed'));return true}catch(e){notify('Could not save: browser storage is restricted');return false}}
 function notify(s){let t=document.getElementById('toast');t.textContent=s;t.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.classList.remove('show'),2700)}
 function icon(t){return t}
