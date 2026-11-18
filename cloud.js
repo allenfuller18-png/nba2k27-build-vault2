@@ -52,7 +52,7 @@
         const needsCapMigration = JSON.stringify(capMigrated) !== JSON.stringify(cloud.builds);
         cloud.builds = capMigrated;
         // Add newly introduced preset builds while keeping the user's cloud edits.
-        const missingPresets = [GOAT_MAGIC_ID, 'b13']
+        const missingPresets = [GOAT_MAGIC_ID, 'b13', 'b14']
           .filter(id => !cloud.builds.some(b => b.id === id))
           .map(id => INITIAL.find(b => b.id === id))
           .filter(Boolean);
