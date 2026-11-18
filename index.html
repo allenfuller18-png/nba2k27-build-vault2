@@ -83,6 +83,24 @@ body.layout-desktop .detail-shell{padding:22px}
 .cb-edit-list{display:grid;gap:9px}.cb-edit-row{display:grid;grid-template-columns:minmax(110px,1fr) 3fr;align-items:center;gap:10px;padding:9px;background:#ffffff07;border:1px solid #ffffff15;border-radius:9px}.cb-edit-row>strong{font-size:12px}
 .cb-edit-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 62px;gap:6px;align-items:end}.cb-edit-fields label{font-size:10px;display:grid;gap:4px}.cb-edit-fields input{min-width:0;width:100%;padding:7px;border:1px solid #45546f;background:#0c1424;color:white;border-radius:8px;height:39px}.cb-result{color:#afbbce;font-size:10px;padding-bottom:5px}.cb-result strong{display:block;color:white;font-size:16px}.cb-invalid{color:#ff9f9f!important}
 @media(max-width:650px){.cb-edit-row{display:block}.cb-edit-row>strong{display:block;margin-bottom:8px}.cb-edit-fields{grid-template-columns:repeat(3,minmax(0,1fr)) 55px}}
+
+/* 20% thicker than the previous 9px attribute progress bars */
+.attr-group .cb-track{height:10.8px}
+.cb-steps-detail{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:-4px 0 12px;font-size:11px}
+.cb-steps-count{font-weight:750;color:#cdd9eb}
+.cb-pill{padding:3px 7px;border-radius:7px;font-size:11px;font-weight:760;border:1px solid}
+.cb-pill.applied{color:#74f2d2;background:#123d37;border-color:#246859}
+.cb-pill.planned{color:#ffd18b;background:#42301d;border-color:#74542a}
+.cb-unknown{color:#b3bed3;background:#ffffff0a;padding:3px 7px;border-radius:7px}
+.cb-step-editor{margin-top:9px;border-top:1px solid #ffffff18;padding-top:8px}
+.cb-step-editor summary{cursor:pointer;font-size:12px;color:#c8d8ee;font-weight:750}
+.cb-step-mini{font-size:10px;color:#9caac4;font-weight:400;margin-left:8px}
+.cb-step-set{display:flex;gap:7px;flex-wrap:wrap;align-items:end;margin-top:9px}
+.cb-step-set label{flex:1 1 145px;display:grid;gap:5px;color:#bbcae0;font-size:11px}
+.cb-step-set input{width:100%;height:40px;color:#f0f4ff;background:#0c1424;border:1px solid #45546f;border-radius:8px;padding:8px}
+.cb-step-button{height:40px;padding:7px 10px}
+.cb-step-editor [data-step-status]{margin:8px 0 0;font-size:11px}
+
 </style>
 </head>
 <body>
@@ -124,6 +142,29 @@ function capInfo(b,s){
  if(![base,used,planned].every(n=>Number.isInteger(n)&&n>=0)||base+used+planned!==target)return {base:target,used:0,planned:0,target};
  return {base,used,planned,target};
 }
+const EXACT_CAP_STEPS={
+ b03:{'Mid-Range':{usedSteps:[3,2]},'Speed':{usedSteps:[4]},'Agility':{usedSteps:[8,6]},'Vertical':{usedSteps:[2,2,2,2]}}
+};
+function safeSteps(x){
+ return Array.isArray(x)&&x.every(v=>Number.isInteger(v)&&v>0&&v<=99)?x.slice():[];
+}
+function capSteps(c,type){
+ const vals=safeSteps(c[type+'Steps']);
+ return vals.reduce((a,b)=>a+b,0)<=c[type]?vals:[];
+}
+function capParts(b,stat){
+ const c=capInfo(b,stat),steps=c.used?capSteps({...c,...(b.capBreakers?.[stat]||{})},'used'):[];
+ const planned=c.planned?capSteps({...c,...(b.capBreakers?.[stat]||{})},'planned'):[];
+ return {...c,usedSteps:steps,plannedSteps:planned,usedUnknown:c.used-steps.reduce((a,b)=>a+b,0),plannedUnknown:c.planned-planned.reduce((a,b)=>a+b,0)};
+}
+function capStepPills(steps,type){
+ return steps.map((n,i)=>`<span class="cb-pill ${type}">#${i+1}: +${n}</span>`).join('');
+}
+function capStepsSummary(b,stat){
+ const c=capParts(b,stat);
+ if(!c.used&&!c.planned)return '';
+ return `<div class="cb-steps-detail">${c.usedSteps.length?`<span class="cb-steps-count">${c.usedSteps.length} applied breaker${c.usedSteps.length!==1?'s':''} recorded</span>${capStepPills(c.usedSteps,'applied')}`:''}${c.usedUnknown?`<span class="cb-unknown">+${c.usedUnknown} applied — individual amounts not recorded</span>`:''}${c.plannedSteps.length?`<span class="cb-steps-count">${c.plannedSteps.length} planned breaker${c.plannedSteps.length!==1?'s':''} recorded</span>${capStepPills(c.plannedSteps,'planned')}`:''}${c.plannedUnknown?`<span class="cb-unknown">+${c.plannedUnknown} planned — individual amounts not recorded</span>`:''}</div>`;
+}
 function migrateCapBreakers(arr){
  return arr.map(original=>{
    const b=clone(original),seeds=CB_SEEDS[b.id]||{};
@@ -144,15 +185,24 @@ function migrateCapBreakers(arr){
    for(const [s,[base,used,planned]] of Object.entries(seeds)){
      if(!b.capBreakers[s]&&Number(b.stats?.[s])===base+used+planned)b.capBreakers[s]={base,used,planned};
    }
+   const known=EXACT_CAP_STEPS[b.id]||{};
+   for(const [stat,entry] of Object.entries(known)){
+     const cap=b.capBreakers?.[stat];if(!cap)continue;
+     for(const type of ['used','planned']){
+       const key=type+'Steps',steps=entry[key];
+       if(steps&&!Object.prototype.hasOwnProperty.call(cap,key)&&steps.reduce((a,n)=>a+n,0)===Number(cap[type]))cap[key]=steps.slice();
+     }
+   }
    return b;
  });
 }
 for(let i=0;i<INITIAL.length;i++)INITIAL[i]=migrateCapBreakers([INITIAL[i]])[0];
 function capTotals(b){return ALL_STATS.reduce((a,s)=>{let c=capInfo(b,s);a.used+=c.used;a.planned+=c.planned;return a},{used:0,planned:0})}
 function attrVisual(b,s){
- const c=capInfo(b,s),p=n=>Math.max(0,Math.min(100,n/99*100));
- return `<div class="attr-line"><span class="attr-label">${esc(s)}</span><div class="cb-track" title="Base ${c.base}, applied +${c.used}, planned +${c.planned}, target ${c.target}"><i class="cb-base" style="width:${p(c.base)}%"></i><i class="cb-used" style="width:${p(c.used)}%"></i><i class="cb-planned" style="width:${p(c.planned)}%"></i></div><span class="attr-val">${c.target}</span></div>${c.used||c.planned?`<div class="cb-breakdown"><span>Base ${c.base}</span>${c.used?`<span class="cb-used-text">+${c.used} applied</span>`:''}${c.planned?`<span class="cb-planned-text">+${c.planned} planned</span>`:''}</div>`:''}`;
+ const c=capParts(b,s),p=n=>Math.max(0,Math.min(100,n/99*100));
+ return `<div class="attr-line"><span class="attr-label">${esc(s)}</span><div class="cb-track" title="Base ${c.base}, applied +${c.used}, planned +${c.planned}, target ${c.target}"><i class="cb-base" style="width:${p(c.base)}%"></i><i class="cb-used" style="width:${p(c.used)}%"></i><i class="cb-planned" style="width:${p(c.planned)}%"></i></div><span class="attr-val">${c.target}</span></div>${c.used||c.planned?`<div class="cb-breakdown"><span>Base ${c.base}</span>${c.used?`<span class="cb-used-text">+${c.used} applied</span>`:''}${c.planned?`<span class="cb-planned-text">+${c.planned} planned</span>`:''}</div>${capStepsSummary(b,s)}`:''}`;
 }
+
 let stored;try{stored=JSON.parse(localStorage.getItem(KEY))}catch(e){};
 let builds=Array.isArray(stored)&&stored.length?migrateCapBreakers(stored):clone(INITIAL),tab='all',query='',position='all',sort='rec',currentId=null,compareIds=[null,null];
 // Migrate prior browser saves without discarding existing edits.
@@ -197,16 +247,64 @@ function compareView(){let opts=builds.map(b=>`<option value="${esc(b.id)}">${es
 function navigation(){return `<nav class="mobile-nav" aria-label="Quick navigation">${[['all','▦','Builds'],['rankings','▤','Ranks'],['legends','★','Legends'],['goats','🏆','GOATs'],['compare','⇄','Compare']].map(([id,ic,txt])=>`<button class="${tab===id?'active':''}" data-tab="${id}"><span>${ic}</span>${txt}</button>`).join('')}</nav>`}
 function render(preserveFocus=false){let active=preserveFocus?document.activeElement?.id:null,sel=null;if(active==='search'){let s=document.getElementById('search');sel=s?[s.selectionStart,s.selectionEnd]:null}let app=document.getElementById('app');app.innerHTML=header()+hero()+tabs()+(currentId?detail(currentId):tab==='rankings'?rankingsView():tab==='legends'?legendView():tab==='goats'?goatView():tab==='compare'?compareView():allView())+`<footer class="footer">Mobile / Desktop / Auto switch available above · Cloud sync available after setup and sign-in · Export JSON backups for safety · All ratings are editable personal assessments. Some imported attributes derive from older build snapshots and should be checked against the in-game builder.</footer>`+navigation();if(tab==='compare'&&!currentId){document.getElementById('compare-a').value=compareIds[0];document.getElementById('compare-b').value=compareIds[1]}if(active==='search'){let el=document.getElementById('search');el?.focus();if(sel)el.setSelectionRange(...sel)}}
 function editor(id){let b=id?builds.find(x=>x.id===id):null,adding=!b;if(!b)b={id:'',name:'',pos:'C',height:"7'0\"",weight:230,wingspan:"7'3\"",rec:8,def:8,speed:60,legend:false,legendName:'',animations:false,notes:'',stats:Object.fromEntries(ALL_STATS.map(x=>[x,25]))};let f=(key,label,val,type='text',opts='')=>`<div class="field"><label for="f-${key}">${label}</label>${type==='select'?`<select id="f-${key}" name="${key}">${opts}</select>`:`<input id="f-${key}" name="${key}" type="${type}" value="${esc(val)}" ${type==='number'?'step="any"':''} required>`}</div>`;
-let base=`<p class="helper cb-edit-help">Edit original ratings and cap-breaker bonuses below. Mint = applied, gold = planned. Target = base + applied + planned (max 99). These are attribute-rating increases, not token counts.</p><div class="edit-grid">${f('name','Build name',b.name)}${f('pos','Position',b.pos,'select',['PG','SG','SF','PF','C'].map(x=>`<option ${b.pos===x?'selected':''}>${x}</option>`).join(''))}${f('height','Height',b.height)}${f('weight','Weight (lbs)',b.weight,'number')}${f('wingspan','Wingspan',b.wingspan)}${f('rec','Overall REC rating /10',b.rec,'number')}${f('def','Defensive rating /10',b.def,'number')}</div><div class="editor-group"><label class="toggle"><input name="legend" id="f-legend" type="checkbox" ${b.legend?'checked':''}> Put this build in <strong>Based on Legends</strong></label><div class="field" style="margin-top:9px"><label for="f-legendName">Legend's name (optional)</label><input name="legendName" id="f-legendName" value="${esc(b.legendName)}" placeholder="e.g. Hakeem Olajuwon"></div></div><div class="editor-group"><label class="toggle"><input name="goat" type="checkbox" ${b.goat?'checked':''}> Official <strong>2K GOAT Build</strong> (not a custom legend)</label><p class="helper">Choose this for preset GOAT builds made by 2K. Leave it unchecked for builds you created yourself.</p></div><div class="editor-group"><label class="toggle"><input name="animations" type="checkbox" ${b.animations?'checked':''}> Scoring + playmaking animations completed</label></div>`;
-let inputs=Object.entries(GROUPS).map(([name,ss])=>`<div class="editor-group"><h3>${esc(name)}</h3><div class="cb-edit-list">${ss.map(stat=>{let c=capInfo(b,stat);return `<div class="cb-edit-row" data-cap-row><strong>${esc(stat)}</strong><div class="cb-edit-fields"><label>Base<input type="number" min="0" max="99" step="1" name="base:${esc(stat)}" value="${c.base}" required></label><label class="cb-used-text">Applied +<input type="number" min="0" max="99" step="1" name="used:${esc(stat)}" value="${c.used}" required></label><label class="cb-planned-text">Planned +<input type="number" min="0" max="99" step="1" name="planned:${esc(stat)}" value="${c.planned}" required></label><div class="cb-result">Target <strong data-target>${c.target}</strong></div></div></div>`}).join('')}</div></div>`).join('');document.getElementById('modal-root').innerHTML=`<div class="modal-wrap" id="modal-wrap"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-head"><h2 id="modal-title">${adding?'Create a build':'Edit '+esc(b.name)}</h2><button type="button" class="btn ghost" data-action="close">✕ Close</button></div><form id="edit-form" data-id="${esc(b.id)}"><div class="modal-body">${base}${inputs}<div class="editor-group"><div class="field"><label for="f-notes">Notes, cap breakers and reminders</label><textarea id="f-notes" name="notes" rows="5" placeholder="Record breakers, animations, future plans…">${esc(b.notes)}</textarea></div></div></div><div class="modal-footer">${adding?'':`<button type="button" class="btn danger" data-action="delete" data-id="${esc(b.id)}">Delete</button>`}<span class="spacer"></span><button type="button" class="btn" data-action="close">Cancel</button><button type="submit" class="btn primary">Save build</button></div></form></section></div>`;document.querySelector('#edit-form input[name="name"]').focus()}
+let base=`<p class="helper cb-edit-help">Edit original ratings and cap-breaker bonuses below. Mint = applied, gold = planned. Target = base + applied + planned (max 99). Record individual breaker amounts below each attribute; leave them empty when the exact split is unknown. Add +1 increases both the total and its individual list.</p><div class="edit-grid">${f('name','Build name',b.name)}${f('pos','Position',b.pos,'select',['PG','SG','SF','PF','C'].map(x=>`<option ${b.pos===x?'selected':''}>${x}</option>`).join(''))}${f('height','Height',b.height)}${f('weight','Weight (lbs)',b.weight,'number')}${f('wingspan','Wingspan',b.wingspan)}${f('rec','Overall REC rating /10',b.rec,'number')}${f('def','Defensive rating /10',b.def,'number')}</div><div class="editor-group"><label class="toggle"><input name="legend" id="f-legend" type="checkbox" ${b.legend?'checked':''}> Put this build in <strong>Based on Legends</strong></label><div class="field" style="margin-top:9px"><label for="f-legendName">Legend's name (optional)</label><input name="legendName" id="f-legendName" value="${esc(b.legendName)}" placeholder="e.g. Hakeem Olajuwon"></div></div><div class="editor-group"><label class="toggle"><input name="goat" type="checkbox" ${b.goat?'checked':''}> Official <strong>2K GOAT Build</strong> (not a custom legend)</label><p class="helper">Choose this for preset GOAT builds made by 2K. Leave it unchecked for builds you created yourself.</p></div><div class="editor-group"><label class="toggle"><input name="animations" type="checkbox" ${b.animations?'checked':''}> Scoring + playmaking animations completed</label></div>`;
+let inputs=Object.entries(GROUPS).map(([name,ss])=>`<div class="editor-group"><h3>${esc(name)}</h3><div class="cb-edit-list">${ss.map(stat=>{
+ const c=capParts(b,stat);
+ return `<div class="cb-edit-row" data-cap-row><strong>${esc(stat)}</strong><div class="cb-edit-fields"><label>Base<input type="number" min="0" max="99" step="1" name="base:${esc(stat)}" value="${c.base}" required></label><label class="cb-used-text">Applied +<input type="number" min="0" max="99" step="1" name="used:${esc(stat)}" value="${c.used}" required></label><label class="cb-planned-text">Planned +<input type="number" min="0" max="99" step="1" name="planned:${esc(stat)}" value="${c.planned}" required></label><div class="cb-result">Target <strong data-target>${c.target}</strong></div></div>
+ <details class="cb-step-editor" ${c.usedSteps.length||c.plannedSteps.length?'open':''}><summary>Individual breakers <span class="cb-step-mini" data-step-summary></span></summary>
+ <div class="cb-step-set"><label>Applied amounts (+ per breaker; comma-separated)<input type="text" inputmode="text" name="usedSteps:${esc(stat)}" value="${esc(c.usedSteps.join(', '))}" placeholder="e.g. 3, 2" autocomplete="off"></label><button class="btn cb-step-button" type="button" data-action="cb-add" data-kind="used">+ Add</button><button class="btn cb-step-button" type="button" data-action="cb-remove" data-kind="used">Remove last</button></div>
+ <div class="cb-step-set"><label>Planned amounts (+ per breaker; comma-separated)<input type="text" inputmode="text" name="plannedSteps:${esc(stat)}" value="${esc(c.plannedSteps.join(', '))}" placeholder="e.g. 1, 2" autocomplete="off"></label><button class="btn cb-step-button" type="button" data-action="cb-add" data-kind="planned">+ Add</button><button class="btn cb-step-button" type="button" data-action="cb-remove" data-kind="planned">Remove last</button></div>
+ <p class="helper" data-step-status></p></details></div>`;
+ }).join('')}</div></div>`).join('');document.getElementById('modal-root').innerHTML=`<div class="modal-wrap" id="modal-wrap"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-head"><h2 id="modal-title">${adding?'Create a build':'Edit '+esc(b.name)}</h2><button type="button" class="btn ghost" data-action="close">✕ Close</button></div><form id="edit-form" data-id="${esc(b.id)}"><div class="modal-body">${base}${inputs}<div class="editor-group"><div class="field"><label for="f-notes">Notes, cap breakers and reminders</label><textarea id="f-notes" name="notes" rows="5" placeholder="Record breakers, animations, future plans…">${esc(b.notes)}</textarea></div></div></div><div class="modal-footer">${adding?'':`<button type="button" class="btn danger" data-action="delete" data-id="${esc(b.id)}">Delete</button>`}<span class="spacer"></span><button type="button" class="btn" data-action="close">Cancel</button><button type="submit" class="btn primary">Save build</button></div></form></section></div>`;document.querySelector('#edit-form input[name="name"]').focus()}
 function closeEditor(){document.getElementById('modal-root').innerHTML=''}
-function submitEdit(form){let d=new FormData(form),id=form.dataset.id,b=builds.find(x=>x.id===id);let name=String(d.get('name')||'').trim();if(!name){notify('Please give your build a name');return}let stats={},capBreakers={};for(let s of ALL_STATS){let vals=['base','used','planned'].map(k=>Number(d.get(k+':'+s)));if(!vals.every(n=>Number.isInteger(n)&&n>=0&&n<=99)||vals.reduce((a,b)=>a+b,0)>99){notify('Invalid upgrade for '+s+' (max 99)');return}let [base,used,planned]=vals;stats[s]=base+used+planned;if(used||planned)capBreakers[s]={base,used,planned}}let rec=nval(d.get('rec'),0),def=nval(d.get('def'),0);if(rec<0||rec>10||def<0||def>10){notify('REC and Def scores must be between 0 and 10');return}let value={id:b?.id||'build-'+Date.now().toString(36),name,pos:d.get('pos'),height:String(d.get('height')),weight:nval(d.get('weight')),wingspan:String(d.get('wingspan')),rec,def,speed:stats.Speed,capBreakers,legend:d.get('legend')!==null && d.get('goat')===null,goat:d.get('goat')!==null,legendName:String(d.get('legendName')||'').trim(),animations:d.get('animations')!==null,notes:String(d.get('notes')||''),stats};if(b){builds[builds.indexOf(b)]=value}else builds.push(value);save();closeEditor();currentId=value.id;render();notify(b?'Build updated ✓':'Build added ✓')}
+function parseStepEntry(text){
+ const raw=String(text||'').trim();if(!raw)return [];
+ const parts=raw.split(',').map(x=>x.trim());
+ if(parts.some(x=>!/^\d+$/.test(x)))return null;
+ const nums=parts.map(Number);
+ return nums.every(x=>Number.isInteger(x)&&x>0&&x<=99)?nums:null;
+}
+function syncCapRow(row){
+ const get=kind=>row.querySelector('input[name^="'+kind+':"]'),num=kind=>Number(get(kind)?.value),vals=['base','used','planned'].map(num);
+ const total=vals.reduce((a,b)=>a+b,0),validTotal=vals.every(n=>Number.isInteger(n)&&n>=0&&n<=99)&&total<=99;
+ const out=row.querySelector('[data-target]');
+ if(out){out.textContent=validTotal?total:'Invalid';out.classList.toggle('cb-invalid',!validTotal)}
+ const steps=['used','planned'].map(kind=>parseStepEntry(get(kind+'Steps')?.value));
+ const validSteps=steps.every((a,i)=>a!==null&&a.reduce((p,n)=>p+n,0)<=vals[i+1]);
+ const summary=row.querySelector('[data-step-summary]'),status=row.querySelector('[data-step-status]');
+ if(summary){const n=steps.reduce((a,b)=>a+(b?.length||0),0);summary.textContent=n+' individual amount'+(n===1?'':'s')+' recorded'}
+ if(status)status.textContent=!validSteps?'Individual allocations must be positive numbers and not exceed their applied/planned totals.':steps.map((arr,i)=>{const missing=vals[i+1]-arr.reduce((a,n)=>a+n,0);return (i?'Planned':'Applied')+': '+arr.length+' recorded'+(missing?' · +'+missing+' not itemized':'')}).join(' | ');
+ return validTotal&&validSteps;
+}
+function submitEdit(form){let d=new FormData(form),id=form.dataset.id,b=builds.find(x=>x.id===id);let name=String(d.get('name')||'').trim();if(!name){notify('Please give your build a name');return}let stats={},capBreakers={};for(let s of ALL_STATS){let vals=['base','used','planned'].map(k=>Number(d.get(k+':'+s)));if(!vals.every(n=>Number.isInteger(n)&&n>=0&&n<=99)||vals.reduce((a,b)=>a+b,0)>99){notify('Invalid upgrade for '+s+' (max 99)');return}let [base,used,planned]=vals;
+const parse=type=>parseStepEntry(String(d.get(type+'Steps:'+s)||''));
+const usedSteps=parse('used'),plannedSteps=parse('planned');
+if(usedSteps===null||plannedSteps===null){notify('Use positive whole numbers separated by commas for '+s);return}
+if(usedSteps.reduce((a,n)=>a+n,0)>used||plannedSteps.reduce((a,n)=>a+n,0)>planned){notify('Individual breaker amounts exceed their totals for '+s);return}
+stats[s]=base+used+planned;
+if(used||planned){capBreakers[s]={base,used,planned};if(usedSteps.length)capBreakers[s].usedSteps=usedSteps;if(plannedSteps.length)capBreakers[s].plannedSteps=plannedSteps}}let rec=nval(d.get('rec'),0),def=nval(d.get('def'),0);if(rec<0||rec>10||def<0||def>10){notify('REC and Def scores must be between 0 and 10');return}let value={id:b?.id||'build-'+Date.now().toString(36),name,pos:d.get('pos'),height:String(d.get('height')),weight:nval(d.get('weight')),wingspan:String(d.get('wingspan')),rec,def,speed:stats.Speed,capBreakers,legend:d.get('legend')!==null && d.get('goat')===null,goat:d.get('goat')!==null,legendName:String(d.get('legendName')||'').trim(),animations:d.get('animations')!==null,notes:String(d.get('notes')||''),stats};if(b){builds[builds.indexOf(b)]=value}else builds.push(value);save();closeEditor();currentId=value.id;render();notify(b?'Build updated ✓':'Build added ✓')}
 function exportData(){let blob=new Blob([JSON.stringify({app:'My 2K27 Build Vault',schema:1,exportedAt:new Date().toISOString(),builds},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='nba-2k27-build-vault-backup.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('Backup exported')}
 async function importData(file){if(!file)return;try{let data=JSON.parse(await file.text()),items=Array.isArray(data)?data:data.builds;if(!Array.isArray(items)||!items.length)throw Error('No build data found');let safe=items.map((x,i)=>{if(!x||typeof x.name!=='string'||typeof x.stats!=='object')throw Error('Invalid build at '+(i+1));let st=Object.fromEntries(ALL_STATS.map(s=>[s,Math.max(0,Math.min(99,Math.round(nval(x.stats[s],25))))]));return {id:String(x.id||'import-'+i),name:x.name,pos:String(x.pos||'C'),height:String(x.height||''),weight:nval(x.weight),wingspan:String(x.wingspan||''),rec:Math.max(0,Math.min(10,nval(x.rec))),def:Math.max(0,Math.min(10,nval(x.def))),speed:st.Speed,legend:!!x.legend&&!x.goat,goat:!!x.goat,legendName:String(x.legendName||''),animations:!!x.animations,notes:String(x.notes||''),stats:st,capBreakers:x.capBreakers&&typeof x.capBreakers==='object'&&!Array.isArray(x.capBreakers)?x.capBreakers:{}}});if(!confirm(`Replace the current ${builds.length} builds with ${safe.length} imported builds? Export a backup first if you want to keep your current edits.`))return;builds=migrateCapBreakers(safe);save();tab='all';currentId=null;render();notify('Backup imported successfully ✓')}catch(e){notify('Import failed: '+e.message)}}
-document.addEventListener('click',e=>{let btn=e.target.closest('[data-action],[data-tab]');if(!btn)return;if(btn.dataset.tab){tab=btn.dataset.tab;currentId=null;query='';position='all';render();window.scrollTo({top:0,behavior:'smooth'});return}let a=btn.dataset.action,id=btn.dataset.id;if(a==='layout')setLayout(btn.dataset.mode);else if(a==='cloud')window.cloudVault?.openPanel();else if(a==='view'){currentId=id;render();window.scrollTo({top:0,behavior:'smooth'})}else if(a==='edit')editor(id);else if(a==='add')editor();else if(a==='close')closeEditor();else if(a==='back'){currentId=null;render()}else if(a==='export')exportData();else if(a==='import')document.getElementById('import-input').click();else if(a==='delete'){let b=builds.find(x=>x.id===id);if(b&&confirm(`Delete “${b.name}”? This cannot be undone unless you have an exported backup.`)){builds=builds.filter(x=>x.id!==id);save();closeEditor();currentId=null;render();notify('Build deleted')}}});
+document.addEventListener('click',e=>{let btn=e.target.closest('[data-action],[data-tab]');if(!btn)return;if(btn.dataset.tab){tab=btn.dataset.tab;currentId=null;query='';position='all';render();window.scrollTo({top:0,behavior:'smooth'});return}let a=btn.dataset.action,id=btn.dataset.id;if(a==='cb-add'||a==='cb-remove'){
+ const row=btn.closest('[data-cap-row]'),kind=btn.dataset.kind;
+ if(!row||!['used','planned'].includes(kind))return;
+ const stepInput=row.querySelector('input[name^="'+kind+'Steps:"]'),totalInput=row.querySelector('input[name^="'+kind+':"]');
+ const arr=parseStepEntry(stepInput?.value);
+ if(!arr){notify('Correct the individual allocations before editing');return}
+ let total=Number(totalInput.value);
+ if(a==='cb-add'){
+   const base=Number(row.querySelector('input[name^="base:"]')?.value);
+   const other=Number(row.querySelector('input[name^="'+(kind==='used'?'planned':'used')+':"]')?.value);
+   if(base+other+total>=99){notify('Attribute target cannot exceed 99');return}
+   arr.push(1);totalInput.value=String(total+1);
+ }else if(arr.length){
+   const last=arr.pop();totalInput.value=String(Math.max(0,total-last));
+ }
+ stepInput.value=arr.join(', ');syncCapRow(row);return;
+ }else if(a==='layout')setLayout(btn.dataset.mode);else if(a==='cloud')window.cloudVault?.openPanel();else if(a==='view'){currentId=id;render();window.scrollTo({top:0,behavior:'smooth'})}else if(a==='edit')editor(id);else if(a==='add')editor();else if(a==='close')closeEditor();else if(a==='back'){currentId=null;render()}else if(a==='export')exportData();else if(a==='import')document.getElementById('import-input').click();else if(a==='delete'){let b=builds.find(x=>x.id===id);if(b&&confirm(`Delete “${b.name}”? This cannot be undone unless you have an exported backup.`)){builds=builds.filter(x=>x.id!==id);save();closeEditor();currentId=null;render();notify('Build deleted')}}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeEditor();if((e.key==='Enter'||e.key===' ')&&e.target.classList.contains('lb-row')){e.preventDefault();currentId=e.target.dataset.id;render()}});
 document.addEventListener('submit',e=>{if(e.target.id==='edit-form'){e.preventDefault();submitEdit(e.target)}});
-document.addEventListener('input',e=>{if(e.target.id==='search'){query=e.target.value;render(true)}const row=e.target.closest('[data-cap-row]');if(row){let vals=['base','used','planned'].map(k=>Number(row.querySelector('input[name^="'+k+':"]')?.value));const out=row.querySelector('[data-target]'),sum=vals.reduce((a,b)=>a+b,0);if(out){out.textContent=vals.every(n=>Number.isInteger(n)&&n>=0)&&sum<=99?sum:'Invalid';out.classList.toggle('cb-invalid',sum>99)}}});
+document.addEventListener('input',e=>{if(e.target.id==='search'){query=e.target.value;render(true)}const row=e.target.closest('[data-cap-row]');if(row)syncCapRow(row)});
 document.addEventListener('change',e=>{let t=e.target;if(t.id==='position'){position=t.value;render()}else if(t.id==='sort'){sort=t.value;render()}else if(t.id==='compare-a'){compareIds[0]=t.value;render()}else if(t.id==='compare-b'){compareIds[1]=t.value;render()}else if(t.id==='import-input'){importData(t.files[0]);t.value=''}});
 render();
 </script>
