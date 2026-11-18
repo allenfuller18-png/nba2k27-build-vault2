@@ -59,6 +59,7 @@
           }
           replaceBuilds([...cloud.builds, JSON.parse(JSON.stringify(newPreset))]);
           dirty = true; conflict = false;
+          loading = false; // allow revision-aware migration to save
           await push();
           return;
         }
