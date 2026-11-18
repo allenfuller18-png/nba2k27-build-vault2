@@ -59,9 +59,12 @@
    if(!token){wait.remove();bubble('Please use ☁ Sign in at the top of the Vault first, then return to chat. This keeps your build data and API access protected.','system');return}
    const snapshot=(typeof builds!=='undefined'&&Array.isArray(builds))?builds:[];
    const response=await fetch('/api/chat',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+token},body:JSON.stringify({messages:messages.slice(-12),builds:snapshot}),cache:'no-store'});
-   const data=await response.json().catch(()=>({error:'The AI backend is unavailable. Check Cloudflare Worker setup.'}));
+   const data=await response.json().catch(()=>null);
    wait.remove();
-   if(!response.ok||!data.reply){bubble(data.error||'Unable to answer. Please try again.','system');return}
+   if(!response.ok||!data?.reply){
+    const advice=response.status===404?'Build Vault AI backend was not found at /api/chat. Deploy the latest GitHub code as a Cloudflare Pages project with Functions enabled, or as a Cloudflare Worker.':response.status===405?'The chat endpoint rejected this request; confirm the live site is running the latest backend.':response.status===401?'Your Vault login may have expired. Sign in again using Cloud Sync.':response.status===403?'Your Vault email is not authorized for AI. Check VAULT_AI_ALLOWED_EMAIL in Cloudflare secrets.':response.status===503?'AI setup is incomplete. Set OPENAI_API_KEY and VAULT_AI_ALLOWED_EMAIL in your Cloudflare project secrets, then deploy.':response.status===429?'The AI service is rate limited or out of quota. Check API billing and retry.':'Unable to answer. Check that the chat backend is deployed and your API access is configured.';
+    bubble(data?.error||advice,'system');return;
+   }
    messages.push({role:'assistant',content:data.reply});messages=messages.slice(-12);persist();bubble(data.reply,'assistant');
   }catch(err){wait.remove();bubble('Unable to reach Build Vault AI right now. Please check the Cloudflare deployment.','system')}
   finally{busy=false;submit.disabled=false;field.focus()}
