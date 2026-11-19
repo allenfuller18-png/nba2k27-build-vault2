@@ -663,7 +663,7 @@ function nbaAnalogies(id){
  const arr=NBA_COMPARISONS[id]||[];
  return '<div class="analogies">'+arr.map((p,i)=>{
   const initials=p[0].split(' ').map(z=>z[0]).join('').slice(0,2);
-  const portrait='<img loading="lazy" src="https://cdn.nba.com/headshots/nba/latest/1040x760/'+p[4]+'.png" data-player-name="'+esc(p[0])+'" alt="'+esc(p[0])+' portrait" onerror="recoverRealPlayerPhoto(this)">';
+  const portrait='<img loading="lazy" src="/player-photo/'+p[4]+'" data-player-name="'+esc(p[0])+'" alt="'+esc(p[0])+' portrait" onerror="recoverRealPlayerPhoto(this)">';
   const bio=NBA_PLAYER_BIOS[p[4]];
   const career=bio?'<div class="analogy-profile"><div><span>NBA career</span><strong>'+esc(bio[0])+'</strong><small>'+esc(bio[1])+'</small></div><div><span>Positions played</span><strong>'+esc(bio[2])+'</strong></div><div><span>Listed size</span><strong>'+esc(bio[3])+' · '+esc(bio[4])+'</strong></div></div>':'';
   return '<article class="analogy"><div class="analogy-portrait"><span>'+esc(initials)+'</span>'+portrait+'</div><div class="analogy-copy"><div class="analogy-name"><strong>#'+(i+1)+' '+esc(p[0])+'</strong>'+(i===0?'<em>Closest match</em>':'')+'</div>'+career+'<p><b>Similarities:</b> '+esc(p[2])+'.</p><p><b>Key difference:</b> '+esc(p[3])+'.</p><a class="analogy-source" href="https://www.nba.com/player/'+encodeURIComponent(p[4])+'" target="_blank" rel="noopener noreferrer">NBA player profile ↗</a></div></article>';
