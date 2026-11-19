@@ -595,11 +595,75 @@ const NBA_COMPARISONS={"b12":[["Magic Johnson","Retired","6'9 floor general; eli
 // NBA career spans and representative listed physical measurements, checked against NBA player profiles (Nov 2026).
 // Seasons refer to NBA participation only, not overseas play. Listed weights can vary by year.
 const NBA_PLAYER_BIOS={"87":["1991–2009","18 seasons","C","7'2\"","260 lb"],"165":["1984–2002","18 seasons","C","7'0\"","255 lb"],"406":["1992–2011","19 seasons","C","7'1\"","325 lb"],"431":["1989–2003","14 seasons","PF / C","6'10\"","230 lb"],"717":["1995–2001; 2002–2003","7 NBA seasons","C","7'3\"","279 lb"],"764":["1989–2003","14 seasons","C","7'1\"","250 lb"],"937":["1987–2004","17 seasons","SF / SG","6'8\"","228 lb"],"1112":["1996–2012","16 seasons","C / PF","6'9\"","240 lb"],"1495":["1997–2016","19 seasons","PF / C","6'11\"","250 lb"],"1890":["1999–2015","16 seasons","SF / PF / SG","6'7\"","228 lb"],"1905":["2001–2011; 2012–2015","13 seasons","SF / PF","6'9\"","235 lb"],"2548":["2003–2019","16 seasons","SG / PG","6'4\"","220 lb"],"76631":["1982–1993","11 seasons","C","7'4\"","275 lb"],"77142":["1979–1991; 1996","13 seasons","PG / SG / SF","6'9\"","220 lb"],"101108":["2005–2026","21 seasons","PG","6'0\"","175 lb"],"201142":["2007–present","19 seasons played","SF / PF","6'11\"","234 lb"],"201188":["2008–2021","13 NBA seasons","C","6'11\"","255 lb"],"201933":["2010–2023","13 seasons","PF / C","6'9\"","250 lb"],"202331":["2010–present","17th season","SG / SF / PF","6'8\"","230 lb"],"202681":["2011–present","16th season","PG / SG","6'2\"","195 lb"],"202710":["2011–present","16th season","SF / SG","6'6\"","230 lb"],"203110":["2012–present","15th season","PF / C / SF","6'6\"","240 lb"],"203497":["2013–present","14th season","C","7'1\"","258 lb"],"203507":["2013–present","14th season","PF / SF / C","6'11\"","250 lb"],"203932":["2014–present","13th season","PF / SF","6'8\"","235 lb"],"203944":["2014–present","13th season","PF / C","6'9\"","256 lb"],"203999":["2015–present","12th season","C","6'11\"","284 lb"],"1627732":["2017–2025; 2026–present","9th season","PG / PF","6'10\"","240 lb"],"1627734":["2016–present","11th season","PF / C","6'10\"","240 lb"],"1627742":["2016–present","11th season","SF / SG","6'8\"","190 lb"],"1628369":["2017–present","10th season","SF / PF","6'8\"","229 lb"],"1628389":["2017–present","10th season","C / PF","6'9\"","260 lb"],"1628991":["2018–present","9th season","PF / C","6'10\"","242 lb"],"1629027":["2018–present","9th season","PG","6'1\"","164 lb"],"1629029":["2018–present","9th season","PG / SG / SF","6'8\"","230 lb"],"1629627":["2019–present","7 seasons played","PF","6'6\"","277 lb"],"1630162":["2020–present","7th season","SG / SF","6'4\"","225 lb"]};
+// Use authentic photos only: NBA CDN, then Wikipedia's subject-page photo,
+// then a Wikimedia Commons photograph. Never substitute synthetic likenesses.
+const REAL_PLAYER_PHOTO_CACHE=new Map();
+function wikimediaName(name){
+ return String(name||'').replace(/[\u2018\u2019]/g,"'").trim();
+}
+async function realPlayerWikipediaPhoto(name){
+ const title=wikimediaName(name);
+ const url=new URL('https://en.wikipedia.org/w/api.php');
+ for(const [k,v] of Object.entries({action:'query',format:'json',origin:'*',redirects:'1',prop:'pageimages',piprop:'thumbnail',pithumbsize:'600',titles:title}))url.searchParams.set(k,v);
+ const res=await fetch(url.toString(),{mode:'cors'});
+ if(!res.ok)return '';
+ const pages=Object.values((await res.json()).query?.pages||{});
+ const page=pages.find(x=>x&&x.ns===0&&!x.missing&&x.thumbnail?.source);
+ return page?.thumbnail?.source||'';
+}
+async function realPlayerCommonsPhoto(name){
+ const subject=wikimediaName(name);
+ const url=new URL('https://commons.wikimedia.org/w/api.php');
+ for(const [k,v] of Object.entries({action:'query',format:'json',origin:'*',generator:'search',gsrnamespace:'6',gsrlimit:'30',gsrsearch:'"'+subject+'" basketball',prop:'imageinfo',iiprop:'url|mime',iiurlwidth:'600'}))url.searchParams.set(k,v);
+ const res=await fetch(url.toString(),{mode:'cors'});
+ if(!res.ok)return '';
+ const pages=Object.values((await res.json()).query?.pages||{});
+ const clean=t=>String(t).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+ const words=clean(subject).split(' ').filter(x=>x.length>1);
+ const candidates=pages.filter(p=>{
+  const title=clean(p.title||'');
+  const info=p.imageinfo?.[0];
+  return words.every(w=>title.includes(w))&&/^image\/(jpeg|png|webp)$/i.test(info?.mime||'')&&
+   !/signature|autograph|logo|jersey|poster|card|trophy|arena|sculpture|statue|memorial|grave|drawing|painting|illustration|artwork/i.test(p.title||'')&&
+   !!(info.thumburl||info.url);
+ });
+ candidates.sort((a,b)=>(/portrait|headshot|close.up/i.test(b.title)?2:0)-(/portrait|headshot|close.up/i.test(a.title)?2:0));
+ const info=candidates[0]?.imageinfo?.[0];
+ return info?.thumburl||info?.url||'';
+}
+async function findRealPlayerPhoto(name,source){
+ const key=source+':'+name;
+ if(!REAL_PLAYER_PHOTO_CACHE.has(key)){
+  const query=(source==='wikipedia'?realPlayerWikipediaPhoto:realPlayerCommonsPhoto)(name)
+   .catch(()=> '');
+  REAL_PLAYER_PHOTO_CACHE.set(key,query);
+ }
+ return REAL_PLAYER_PHOTO_CACHE.get(key);
+}
+async function recoverRealPlayerPhoto(img){
+ if(!img?.isConnected)return;
+ const name=img.dataset.playerName;
+ if(!name){img.remove();return}
+ const stage=Number(img.dataset.realPhotoStage||0);
+ if(stage>=2){img.remove();return}
+ // Each stage is attempted once, including if the fetched URL fails to load.
+ img.dataset.realPhotoStage=String(stage+1);
+ try{
+  const candidate=await findRealPlayerPhoto(name,stage===0?'wikipedia':'commons');
+  if(!img.isConnected)return;
+  if(candidate&&candidate!==img.src){
+   img.src=candidate;
+  }else{
+   recoverRealPlayerPhoto(img);
+  }
+ }catch{recoverRealPlayerPhoto(img)}
+}
+
 function nbaAnalogies(id){
  const arr=NBA_COMPARISONS[id]||[];
  return '<div class="analogies">'+arr.map((p,i)=>{
   const initials=p[0].split(' ').map(z=>z[0]).join('').slice(0,2);
-  const portrait='<img loading="lazy" src="https://cdn.nba.com/headshots/nba/latest/1040x760/'+p[4]+'.png" alt="" onerror="this.remove()">';
+  const portrait='<img loading="lazy" src="https://cdn.nba.com/headshots/nba/latest/1040x760/'+p[4]+'.png" data-player-name="'+esc(p[0])+'" alt="'+esc(p[0])+' portrait" onerror="recoverRealPlayerPhoto(this)">';
   const bio=NBA_PLAYER_BIOS[p[4]];
   const career=bio?'<div class="analogy-profile"><div><span>NBA career</span><strong>'+esc(bio[0])+'</strong><small>'+esc(bio[1])+'</small></div><div><span>Positions played</span><strong>'+esc(bio[2])+'</strong></div><div><span>Listed size</span><strong>'+esc(bio[3])+' · '+esc(bio[4])+'</strong></div></div>':'';
   return '<article class="analogy"><div class="analogy-portrait"><span>'+esc(initials)+'</span>'+portrait+'</div><div class="analogy-copy"><div class="analogy-name"><strong>#'+(i+1)+' '+esc(p[0])+'</strong>'+(i===0?'<em>Closest match</em>':'')+'</div>'+career+'<p><b>Similarities:</b> '+esc(p[2])+'.</p><p><b>Key difference:</b> '+esc(p[3])+'.</p><a class="analogy-source" href="https://www.nba.com/player/'+encodeURIComponent(p[4])+'" target="_blank" rel="noopener noreferrer">NBA player profile ↗</a></div></article>';
