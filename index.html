@@ -806,10 +806,10 @@ function midPaintPlaymakingSection(build){
  if(build.id!=='b09')return '';
  const before=new Map(MID_PAINT_EQUIPPED_PLAYMAKING);
  return `<section class="bv-pane" id="bv-playmaking-competitive">
- <h3>⌁ Playmaking Moves · New Competitive Setup</h3>
+ <h3>⌁ Playmaking Moves · Equipped · User Confirmed</h3>
  <div class="bv-pane-content">
- <p class="bv-muted">User-approved new playmaking selections, compared against the last screenshot-confirmed equipped setup. These changes are saved as the selected setup in the Vault, but their in-game equipment has not been independently verified. Pass Style (Chris Paul) and Dribble Style (Ja Morant) are unchanged and excluded from this comparison.</p>
- <div class="apex-preset-list">${MID_PAINT_NEW_PLAYMAKING.map(([slot,choice])=>`<div class="apex-preset-row" style="display:block"><span>${esc(slot)}</span><div style="display:flex;justify-content:space-between;gap:10px;margin-top:4px"><span>Old: ${esc(before.get(slot)||'Not recorded')}</span><strong>New: ${esc(choice)}</strong></div></div>`).join('')}</div>
+ <p class="bv-muted">You confirmed that all 30 competitive playmaking selections are now equipped in-game on your 6\'2" Mid-Paint Playmaker. The old screenshot-confirmed selections remain below for comparison. Pass Style (Chris Paul) and Dribble Style (Ja Morant) remain unchanged and are excluded from these 30 moves.</p>
+ <div class="apex-preset-list">${MID_PAINT_NEW_PLAYMAKING.map(([slot,choice])=>`<div class="apex-preset-row" style="display:block"><span>${esc(slot)}</span><div style="display:flex;justify-content:space-between;gap:10px;margin-top:4px"><span>Old: ${esc(before.get(slot)||'Not recorded')}</span><strong>Equipped: ${esc(choice)}</strong></div></div>`).join('')}</div>
  </div></section>`;
 }
 function hasApex78PlaymakingFit(build){
