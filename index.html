@@ -795,15 +795,23 @@ function analysisView(){
 // individual animation availability must still be verified in the in-game menu.
 const APEX_78_HANDLE_PLAYMAKING=[["Crossover","Shaedon Sharpe"],["Between Legs Cross","Pro"],["Signature Size-Up","Jayson Tatum"],["Breakdown Combo","Kevin Durant"],["Breakdown Moving Combo","CJ McCollum"],["Crossover Escape","Pro"],["Hesitation Escape","DeMar DeRozan"],["Between Legs Escape","Kevin Durant"],["Behind the Back Escape","Anthony Edwards"],["Misdirection Hesitation","Pro"],["Misdirection Crossover","Pro"],["Misdirection Behind Back","Pro"],["Combo Move","Anthony Edwards"],["Hesitation Crossover Combo","Pro"],["Double Crossover Combo","Kevin Durant"],["Behind the Back","Scottie Pippen"],["Behind the Back Launch","Pro"],["Spin","Pro"],["Cross Spin","Pro"],["In and Out","Pro"],["Hesitation","Scottie Pippen"],["Lateral Hesitation","Anthony Edwards"],["Stepback","Pro"],["Crossover Stepback","Pro"],["Lateral Stepback","Pro"],["Triple Threat Style","Kobe Bryant"],["Triple Threat Breakdown","Anthony Edwards"],["Triple Threat Jab Steps","Zach LaVine"],["Triple Threat Stepovers","Kobe Bryant"],["Park Flashy Pass","None"]];
 function hasApex78PlaymakingFit(build){
- return !!build&&heightInches(build.height)<82&&Number(build.stats?.['Ball Handle'])===78;
+ // b13 = screenshot source; b06 = user-confirmed equipped matching animations at 80 BH.
+ // Keep the prior recommendation rule for other sub-6'10 builds with 78 Ball Handle.
+ return !!build&&(build.id==='b13'||build.id==='b06'||(heightInches(build.height)<82&&Number(build.stats?.['Ball Handle'])===78));
 }
 function apexPlaymakingSection(build){
  if(!hasApex78PlaymakingFit(build))return '';
- const original=build.id==='b13';
+ const source=build.id==='b13',confirmed=build.id==='b06';
+ const subtitle=source?'Saved Screenshot Setup':confirmed?'Equipped · User Confirmed':'Recommended Setup';
+ const explanation=source
+  ?'Transcribed from your Apex-Axing Poster Slasher (99 Driving Dunk, 78 Ball Handle) screenshots.'
+  :confirmed
+   ?'You confirmed that your 6\'9" 2-Way Small Ball Five (80 Ball Handle) now uses the same 30 playmaking selections as your Apex-Axing Poster Slasher.'
+   :'Suggested from your Apex-Axing Poster Slasher setup for sub-6\'10" builds with 78 Ball Handle. Confirm in-game requirements before equipping.';
  return `<section class="bv-pane" id="bv-playmaking-preset">
- <h3>⌁ 78 Ball Handle Playmaking Moves ${original?'· Saved Screenshot Setup':'· Recommended Setup'}</h3>
+ <h3>⌁ Playmaking Moves · ${subtitle}</h3>
  <div class="bv-pane-content">
- <p class="bv-muted">${original?'Saved from your 99 Driving Dunk Apex-Axing Poster Slasher screenshots.':'Recommendation copied from your 99 Driving Dunk Apex-Axing Poster Slasher setup because this build is below 6\'10" and has exactly 78 Ball Handle.'} Pass Style and Dribble Style are intentionally excluded. Verify animation availability against each build\'s other requirements in NBA 2K27.</p>
+ <p class="bv-muted">${explanation} Pass Style and Dribble Style are intentionally excluded from this shared animation list.</p>
  <div class="apex-preset-list">${APEX_78_HANDLE_PLAYMAKING.map(([slot,choice])=>`<div class="apex-preset-row"><span>${esc(slot)}</span><strong>${esc(choice)}</strong></div>`).join('')}</div>
  </div></section>`;
 }
