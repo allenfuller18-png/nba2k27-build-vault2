@@ -797,6 +797,21 @@ const APEX_78_HANDLE_PLAYMAKING=[["Crossover","Shaedon Sharpe"],["Between Legs C
 // User-confirmed equipped playmaking animations for the 6'8" 3-Level Shot Eraser.
 // Screenshot source: IMG_6944, IMG_6945, IMG_6946 (November 25, 2026).
 const SHOT_ERASER_PLAYMAKING=[["Pass Style","Kawhi Leonard"],["Dribble Style","Scoot Henderson"],["Crossover","Shaedon Sharpe"],["Between Legs Cross","Pro"],["Signature Size-Up","Coby White"],["Breakdown Combo","Jordan Poole"],["Breakdown Moving Combo","Zach LaVine"],["Crossover Escape","Zach LaVine"],["Hesitation Escape","Pro"],["Between Legs Escape","Jimmy Butler"],["Behind the Back Escape","Coby White"],["Misdirection Hesitation","Coby White"],["Misdirection Crossover","Pro"],["Misdirection Behind Back","Pro"],["Combo Move","Pro"],["Hesitation Crossover Combo","Pro"],["Double Crossover Combo","Kevin Durant"],["Behind the Back","Coby White"],["Behind the Back Launch","Pro"],["Spin","Steve Nash"],["Cross Spin","Steve Nash"],["In and Out","Jordan Poole"],["Hesitation","Normal"],["Lateral Hesitation","Anthony Edwards"],["Stepback","Pro"],["Crossover Stepback","Pro"],["Lateral Stepback","Zach LaVine"],["Triple Threat Style","Basic"],["Triple Threat Breakdown","Zach LaVine"],["Triple Threat Jab Steps","Basic"],["Triple Threat Stepovers","Basic"],["Park Flashy Pass","None"]];
+// 6'2" Mid-Paint Playmaker: historical in-game equipped screenshots vs.
+// user-approved 2026-11-25 competitive recommendations.
+// Pass Style and Dribble Style intentionally kept as equipped, not changed.
+const MID_PAINT_EQUIPPED_PLAYMAKING=[["Pass Style","Chris Paul"],["Dribble Style","Ja Morant"],["Crossover","Jordan Poole"],["Between Legs Cross","Pro"],["Signature Size-Up","Coby White"],["Breakdown Combo","Coby White"],["Breakdown Moving Combo","Kyrie Irving"],["Crossover Escape","Zach LaVine"],["Hesitation Escape","Kyrie Irving"],["Between Legs Escape","Kyrie Irving"],["Behind the Back Escape","Coby White"],["Misdirection Hesitation","Kyrie Irving"],["Misdirection Crossover","Kyrie Irving"],["Misdirection Behind Back","Kyrie Irving"],["Combo Move","LeBron James"],["Hesitation Crossover Combo","Ja Morant"],["Double Crossover Combo","Kyrie Irving"],["Behind the Back","Kyrie Irving"],["Behind the Back Launch","Pro"],["Spin","Steve Nash"],["Cross Spin","Kyrie Irving"],["In and Out","Russell Westbrook"],["Hesitation","Zach LaVine"],["Lateral Hesitation","Jimmy Butler"],["Stepback","Kyrie Irving"],["Crossover Stepback","Kyrie Irving"],["Lateral Stepback","Jimmy Butler"],["Triple Threat Style","Kobe Bryant"],["Triple Threat Breakdown","Anthony Edwards"],["Triple Threat Jab Steps","Zach LaVine"],["Triple Threat Stepovers","Kobe Bryant"],["Park Flashy Pass","No Look"]];
+const MID_PAINT_NEW_PLAYMAKING=[["Crossover","Jordan Poole"],["Between Legs Cross","D'Angelo Russell"],["Signature Size-Up","Tyrese Haliburton"],["Breakdown Combo","Coby White"],["Breakdown Moving Combo","Kawhi Leonard"],["Crossover Escape","Jimmy Butler"],["Hesitation Escape","Coby White"],["Between Legs Escape","Zach LaVine"],["Behind the Back Escape","Kawhi Leonard"],["Misdirection Hesitation","Pro"],["Misdirection Crossover","Anthony Edwards"],["Misdirection Behind Back","Pro"],["Combo Move","Pro"],["Hesitation Crossover Combo","Ja Morant"],["Double Crossover Combo","James Harden"],["Behind the Back","Scottie Pippen"],["Behind the Back Launch","Pro"],["Spin","Steve Nash"],["Cross Spin","Coby White"],["In and Out","Russell Westbrook"],["Hesitation","LeBron James"],["Lateral Hesitation","Rajon Rondo"],["Stepback","Jayson Tatum"],["Crossover Stepback","Kyrie Irving"],["Lateral Stepback","Jimmy Butler"],["Triple Threat Style","Kobe Bryant"],["Triple Threat Breakdown","Anthony Edwards"],["Triple Threat Jab Steps","Zach LaVine"],["Triple Threat Stepovers","Kobe Bryant"],["Park Flashy Pass","None"]];
+function midPaintPlaymakingSection(build){
+ if(build.id!=='b09')return '';
+ const before=new Map(MID_PAINT_EQUIPPED_PLAYMAKING);
+ return `<section class="bv-pane" id="bv-playmaking-competitive">
+ <h3>⌁ Playmaking Moves · New Competitive Setup</h3>
+ <div class="bv-pane-content">
+ <p class="bv-muted">User-approved new playmaking selections, compared against the last screenshot-confirmed equipped setup. These changes are saved as the selected setup in the Vault, but their in-game equipment has not been independently verified. Pass Style (Chris Paul) and Dribble Style (Ja Morant) are unchanged and excluded from this comparison.</p>
+ <div class="apex-preset-list">${MID_PAINT_NEW_PLAYMAKING.map(([slot,choice])=>`<div class="apex-preset-row" style="display:block"><span>${esc(slot)}</span><div style="display:flex;justify-content:space-between;gap:10px;margin-top:4px"><span>Old: ${esc(before.get(slot)||'Not recorded')}</span><strong>New: ${esc(choice)}</strong></div></div>`).join('')}</div>
+ </div></section>`;
+}
 function hasApex78PlaymakingFit(build){
  // b13 = screenshot source; b06 = user-confirmed equipped matching animations at 80 BH.
  // Keep the prior recommendation rule for other sub-6'10 builds with 78 Ball Handle.
@@ -844,6 +859,7 @@ function detail(id){
  <div class="bv-dashboard-main">
  <div class="bv-primary"><section class="bv-pane" id="bv-scouting"><h3>◈ Build Profile</h3><div class="bv-pane-content"><p>Full attribute ceilings, including applied and planned upgrades. Tap any upgraded attribute to see individual cap-breaker increments.</p><div class="cb-legend"><span><i class="cb-dot cb-base"></i> Base</span><span class="cb-used-text"><i class="cb-dot cb-used"></i> Applied</span><span class="cb-planned-text"><i class="cb-dot cb-planned"></i> Planned</span></div></div></section>
  ${groups}
+ ${midPaintPlaymakingSection(b)}
  ${shotEraserPlaymakingSection(b)}
  ${apexPlaymakingSection(b)}
  <section class="bv-pane"><h3>▤ Build Notes</h3><div class="bv-pane-content"><p class="detail-notes">${esc(b.notes||'No notes yet. Add some through Edit Build.')}</p></div></section>
